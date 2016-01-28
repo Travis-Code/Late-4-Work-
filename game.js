@@ -1,9 +1,12 @@
 var game;
 var bgColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a,
 0x588c73, 0x8c4646, 0x2a5b84, 0x73503c];
+var titleColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a];
+var tunnelWidth = 256;
 
 window.onload = function() {	
-	game = new Phaser.Game(640, 960, Phaser.AUTO, ""); // add Game object
+	game = new Phaser.Game(640, 960, Phaser.AUTO, ""); 
+	//add states
 	game.state.add("Boot", boot);
 	game.state.add("Preload", preload);
 	game.state.add("TitleScreen", titleScreen);
@@ -37,6 +40,8 @@ preload.prototype = {
 		game.load.image("title","assets/sprites/title.png");
 		game.load.image("playbutton", "assets/sprites/playbutton.png");
 		game.load.image("backsplash", "assets/sprites/backsplash.png");
+		game.load.image("tunnelbg", "assets/sprites/tunnelbg.png");
+		game.load.image("wall","assets/sprites/wall.png");
 	},
 	create: function(){
 		game.state.start("TitleScreen");
@@ -46,19 +51,25 @@ preload.prototype = {
 var titleScreen = function(game){};
 titleScreen.prototype = {
 	create: function(){
+		//tileSprite method tiles a background.
 		var titleBG = game.add.tileSprite(0, 0, game.width, game.height, "backsplash");
+		//tint property tints an image.
 		titleBG.tint = bgColors[game.rnd.between(0,bgColors.length-1)];
 		//set random background color.
 		//game.stage.backgroundColor = bgColors[game.rnd.between(0,bgColors.length-1)];
 		var title = game.add.image(game.width/2, 210, "title");
-		//title.tint = bgColors[game.rnd.between(0,bgColors.length-1)];
+		title.tint = titleColors[game.rnd.between(0,titleColors.length-1)];
 		title.anchor.set(0.5);
+		// button method uses callback usually in context with this to specified method.
 		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame);
 		playButton.anchor.set(0.5);
+		//tween(target).to(properties, ease, autoStart, delay, repeat)
 		var playButtonTween = game.add.tween(playButton).to({
 			width:220,
 			height:220
 		}, 1500, "Linear", true, 0, -1);
+		//yoyo method gives yoyo effect plays forward then reverses if set to true.
+		//if yoyo method is set to false it will repeat without reversing.
 		playButtonTween.yoyo(true);
 		
 	},
@@ -70,7 +81,14 @@ titleScreen.prototype = {
 var playGame = function(game){};
 playGame.prototype = {
 	create: function(){
-		console.log("play the game");
+		var tintColor = bgColors[game.rnd.between(0, bgColors.length-1)];
+		var tunnelBG = game.add.tileSprite(0, 0, game.width, game.height, "tunnelbg");
+			tunnelBG.tint = tintColor;
+		var leftWallBG = game.add.tileSprite(- tunnelWidth / 2, 0, game.width / 2, game.height, "wall");
+			leftWallBG.tint = tintColor;
+		var rightWallBG = game.add.tileSprite((game.width+tunnelWidth)/2,0,game.width/2,game.height,"wall");
+			rightWallBG.tint = tintColor;
+			rightWallBG.tileScale.x =-1;
 	}
 }
 
