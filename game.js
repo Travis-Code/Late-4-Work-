@@ -3,6 +3,8 @@ var bgColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a,
 0x588c73, 0x8c4646, 0x2a5b84, 0x73503c];
 var titleColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a];
 var tunnelWidth = 256;
+var shipHorizonalSpeed = 100;
+var shipMoveDelay = 0;
 
 window.onload = function() {	
 	game = new Phaser.Game(640, 960, Phaser.AUTO, ""); 
@@ -34,7 +36,7 @@ preload.prototype = {
 	preload: function(){
 		var loadingBar = this.add.sprite(game.width/2, game.height/2,"loading");
 		loadingBar.anchor.setTo(0.5);
-		//setPreloadSprite(loadingBar);" turns and image into a 
+		//setPreloadSprite(loadingBar);" turns an image into a 
 		//loading bar which grows as assets are being loaded.
 		game.load.setPreloadSprite(loadingBar); 
 		game.load.image("title","assets/sprites/title.png");
@@ -96,17 +98,46 @@ playGame.prototype = {
 			rightWallBG.tint = tintColor;
 		//flip rightWalls x axis horizontally using -1.
 			rightWallBG.tileScale.x = -1;
-		//make array of possible ship positions.
+		//make array of possible ship positions in relation to left and right walls.
 		this.shipPositions = [(game.width-tunnelWidth) / 2 + 32,(game.width+tunnelWidth) / 2 - 32];
-		//add the ship to the game
+		//add the ship to the game and make its position left of the wall.
 		this.ship = game.add.sprite(this.shipPositions[0], 860,"ship");
+		//make a custom variable that keeps track of which side the ship will be on
+		//since the ship will begin at 0 set the side variable to 0.
 		this.ship.side = 0;
+		//variable that regulates if the ship can move or not.
+		this.ship.canMove = true;
 		this.ship.anchor.set(0.5);
+		//enable physics on ship.
 		this.game.physics.enable(this.ship, Phaser.Physics.ARCADE);
+		//set a onDown touch event that fires a callback method called moveShip.
+		game.input.onDown.add(this.moveShip, this);
+	},
 
-			//game.state.start("GameOverScreen");
+	//this method deals with movement of the ship.
+	moveShip: function(){
+		if(this.ship.canMove){
+			this.ship.canMove = false;
+			this.ship.side = 1 - this.ship.side;
+			var horizontalTween = game.add.tween(this.ship).to({
+				x:this.shipPositions[this.ship.side]
+			}, 
+				shipHorizonalSpeed, Phaser.Easing.Linear.None, true);
+				horizontalTween.onComplete.add(function(){
+					game.time.events.add(shipMoveDelay, function(){
+						this.ship.canMove = true;
+					}, this);
+				}, this);
+		
+		}
 	}
 }
+
+
+
+
+
+
 
 var gameOverScreen = function(game){};
 gameOverScreen.prototype = {
