@@ -5,6 +5,7 @@ var titleColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a];
 var tunnelWidth = 256;
 var shipHorizonalSpeed = 100;
 var shipMoveDelay = 0;
+var shipVerticalSpeed = 15000;
 
 window.onload = function() {	
 	game = new Phaser.Game(640, 960, Phaser.AUTO, ""); 
@@ -85,14 +86,15 @@ titleScreen.prototype = {
 var playGame = function(game){};
 playGame.prototype = {
 	create: function(){
-
 		// make random color array for tunnelBG and walls.
 		var tintColor = bgColors[game.rnd.between(0, bgColors.length-1)];
-		//add tunnelbg to the game.
+		//add tunnelbg to the game. make it cover the entire canvas.
+		//add.TileSprite(x,y,width,height,key)
 		var tunnelBG = game.add.tileSprite(0, 0, game.width, game.height, "tunnelbg");
 		//add tint to tunnelBG.	
 			tunnelBG.tint = tintColor;
-		//add and position left wall to the game.
+		//add and position left wall to the game.  
+		//add.TileSprite(x,y,width,height,key)
 		var leftWallBG = game.add.tileSprite(- tunnelWidth / 2, 0, game.width / 2, game.height, "wall");
 			leftWallBG.tint = tintColor;
 		//add and position right wall to the game.
@@ -114,19 +116,34 @@ playGame.prototype = {
 		this.game.physics.enable(this.ship, Phaser.Physics.ARCADE);
 		//set a onDown touch event that fires a callback method called moveShip.
 		game.input.onDown.add(this.moveShip, this);
-		console.log(playGame.prototype);
+	
+		//add smoke emitter add.emitter(x, y, max) x/y are for placement of emitter and the max amount of particles value.
+		this.smokeEmitter = game.add.emitter(this.ship.x, this.ship.y + 10, 20);
+		//set the image for the particle effect. 
+		this.smokeEmitter.makeParticles("smoke");
+		//each particle should have a horizontal and vertical speed.
+		//set the x speed at a random value between setXSpeed(min, max) by seconds
+		this.smokeEmitter.setXSpeed(-15, 15);
+		//set the y speed at a random value between setYSpeed(min, max) by seconds
+		this.smokeEmitter.setYSpeed(50, 150);
+		//ramdomize transparency of each smoke particle. setAlpha(min, max)
+		//0 is completely transparent, 1 is completely opaque.
+		this.smokeEmitter.setAlpha(0.5, 1);
+		//start the emitter
+		//start(explode, lifespan, frequency)
+		//explode is a boolean which bursts out all at once (true) or at a frequency (false).
+		//lifespan is the life time the particle will last for in milliseconds.
+		//frequency of the emittion in milliseconds, if explode is set to false
+		this.smokeEmitter.start(false, 1000,40);
+
+		//adds vertical movement to the shop using a Tween.
+		//goes from current ship location to y=0 top of the canvas.
+		this.verticalTween = game.add.tween(this.ship).to({
+			y:0
+		}, shipVerticalSpeed, Phaser.Easing.Linear.None, true);
 
 	},
 
-		//add smoke emitter
-		this.smokeEmitter = game.add.emitter(this.ship.x, this.ship.y + 10, 20);
-		this.smokeEmitter.makeParticles("smoke");
-		this.smokeEmitter.setXSpeed(-15, 15);
-		this.smokeEmitter.setYSpeed(50, 150);
-		this.smokeEmitter.setAlpha(0.5, 1);
-		this.smokeEmitter.start(false, 1000,40);
-
-		
 
 	//this method deals with movement of the ship.
 	moveShip: function(){
@@ -161,7 +178,13 @@ playGame.prototype = {
 				ghostShip.destroy();
 			});
 		}
-	}
+	},
+
+		update: function(){
+		this.smokeEmitter.x = this.ship.x;
+		this.smokeEmitter.y = this.ship.y;
+	},
+
 }
 
 
