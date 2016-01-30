@@ -4,8 +4,12 @@ var bgColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a,
 var titleColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a];
 var tunnelWidth = 256;
 var shipHorizonalSpeed = 100;
+//shipMoveDelay: stop movement of ship while in tween.
 var shipMoveDelay = 0;
 var shipVerticalSpeed = 15000;
+//swipeDistance tells us any swipe movement greater than 10 pixels will be
+//considered a swipe.
+var swipeDistance = 10;
 
 window.onload = function() {	
 	game = new Phaser.Game(640, 960, Phaser.AUTO, ""); 
@@ -111,11 +115,17 @@ playGame.prototype = {
 		this.ship.side = 0;
 		//variable that regulates if the ship can move or not.
 		this.ship.canMove = true;
+		//variable that regualtes if user can swipe
+		this.ship.canSwipe = false;
 		this.ship.anchor.set(0.5);
 		//enable physics on ship.
 		this.game.physics.enable(this.ship, Phaser.Physics.ARCADE);
-		//set a onDown touch event that fires a callback method called moveShip.
+		//add a onDown touch event that fires a callback method called moveShip.
 		game.input.onDown.add(this.moveShip, this);
+		//add a onUp touch event that will change canSwipe to true.
+		game.input.onUp.add(function(){
+			this.ship.canSwipe = true;
+		},this);
 	
 		//add smoke emitter add.emitter(x, y, max) x/y are for placement of emitter and the max amount of particles value.
 		this.smokeEmitter = game.add.emitter(this.ship.x, this.ship.y + 10, 20);
@@ -147,6 +157,7 @@ playGame.prototype = {
 
 	//this method deals with movement of the ship.
 	moveShip: function(){
+		this.ship.canSwipe = true;
 		if(this.ship.canMove){
 			//set canMove to false so to stop the method from repeat firing while moveShip method is executing.
 			this.ship.canMove = false;
@@ -183,8 +194,28 @@ playGame.prototype = {
 		update: function(){
 		this.smokeEmitter.x = this.ship.x;
 		this.smokeEmitter.y = this.ship.y;
+		//if canSwipe is true check to see if the activePointer input is greater
+		//than the swipeDistance global variable.  if true call restartShip() method
+		if(this.ship.canSwipe){
+			if(Phaser.Point.distance(game.input.activePointer.positionDown,
+				game.input.activePointer.position) > swipeDistance){
+			this.restartShip();
+			}
+		}
 	},
 
+	restartShip: function(){
+		this.ship.canSwipe = false;
+		this.verticalTween.stop();
+		this.verticalTween = game.add.tween(this.ship).to({
+			y: 860
+		}, 100, Phaser.Easing.Linear.None, true);
+		this.verticalTween.onComplete.add(function(){
+			this.verticalTween = game.add.tween(this.ship).to({
+				y: 0
+			}, shipVerticalSpeed, Phaser.Easing.Linear.None, true);
+		}, this)
+	}
 }
 
 
