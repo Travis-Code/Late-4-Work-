@@ -45,6 +45,7 @@ preload.prototype = {
 		game.load.image("tunnelbg", "assets/sprites/tunnelbg.png");
 		game.load.image("wall","assets/sprites/wall.png");
 		game.load.image("ship", "assets/sprites/ship.png");
+		game.load.image("smoke", "assets/sprites/smoke.png");
 	},
 	create: function(){
 		game.state.start("TitleScreen");
@@ -84,6 +85,7 @@ titleScreen.prototype = {
 var playGame = function(game){};
 playGame.prototype = {
 	create: function(){
+
 		// make random color array for tunnelBG and walls.
 		var tintColor = bgColors[game.rnd.between(0, bgColors.length-1)];
 		//add tunnelbg to the game.
@@ -112,23 +114,52 @@ playGame.prototype = {
 		this.game.physics.enable(this.ship, Phaser.Physics.ARCADE);
 		//set a onDown touch event that fires a callback method called moveShip.
 		game.input.onDown.add(this.moveShip, this);
+		console.log(playGame.prototype);
+
 	},
+
+		//add smoke emitter
+		this.smokeEmitter = game.add.emitter(this.ship.x, this.ship.y + 10, 20);
+		this.smokeEmitter.makeParticles("smoke");
+		this.smokeEmitter.setXSpeed(-15, 15);
+		this.smokeEmitter.setYSpeed(50, 150);
+		this.smokeEmitter.setAlpha(0.5, 1);
+		this.smokeEmitter.start(false, 1000,40);
+
+		
 
 	//this method deals with movement of the ship.
 	moveShip: function(){
 		if(this.ship.canMove){
+			//set canMove to false so to stop the method from repeat firing while moveShip method is executing.
 			this.ship.canMove = false;
+			//if ship.side is 1 then turns to 0, if ship.side is 0 then turns to 1.
 			this.ship.side = 1 - this.ship.side;
+			//make tween on ship that moves it from the current side to the opposite side.
 			var horizontalTween = game.add.tween(this.ship).to({
 				x:this.shipPositions[this.ship.side]
 			}, 
-				shipHorizonalSpeed, Phaser.Easing.Linear.None, true);
-				horizontalTween.onComplete.add(function(){
-					game.time.events.add(shipMoveDelay, function(){
-						this.ship.canMove = true;
-					}, this);
+			shipHorizonalSpeed, Phaser.Easing.Linear.None, true);
+			//when the tween is complete, the horizontalTween.onComplete Method is called it sets off a 
+			//method called time.events which will delay 0ms that then makes it so we can fire off 
+			//another touch event moveShip Method.
+			horizontalTween.onComplete.add(function(){
+				game.time.events.add(shipMoveDelay, function(){
+					this.ship.canMove = true;
+			//"this" refers to playGame object.
 				}, this);
-		
+			}, this);
+			//add a shadow fade effect by using a copy of the ship image and tween
+			//then destory the ship copy after the tween completes with onComplete Method.
+			var ghostShip = game.add.sprite(this.ship.x, this.ship.y, "ship");
+			ghostShip.alpha = 0.5;
+			ghostShip.anchor.set(0.5);
+			var ghostTween = game.add.tween(ghostShip).to({
+				alpha: 0
+			}, 350, Phaser.Easing.Linear.None, true);
+			ghostTween.onComplete.add(function(){
+				ghostShip.destroy();
+			});
 		}
 	}
 }
