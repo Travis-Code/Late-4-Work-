@@ -146,7 +146,7 @@ playGame.prototype = {
 		//frequency of the emittion in milliseconds, if explode is set to false
 		this.smokeEmitter.start(false, 1000,40);
 
-		//adds vertical movement to the shop using a Tween.
+		//adds vertical movement to the ship using a Tween.
 		//goes from current ship location to y=0 top of the canvas.
 		this.verticalTween = game.add.tween(this.ship).to({
 			y:0
@@ -204,6 +204,12 @@ playGame.prototype = {
 		}
 	},
 
+
+	//restartShip method will switch stop any interaction with user until it is completed.
+	//it will stop the current verticalTween tween.
+	//and change the value of the ships verticalTween from y: 0 to y: 860 (back to the original y: origin of the ship)
+	//then once the change to the position of 860 to y is complete it will start
+	//the tween of the ship back to y: 0 again.
 	restartShip: function(){
 		this.ship.canSwipe = false;
 		this.verticalTween.stop();
