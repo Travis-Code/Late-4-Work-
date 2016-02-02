@@ -10,6 +10,41 @@ var shipVerticalSpeed = 15000;
 //swipeDistance tells us any swipe movement greater than 10 pixels will be
 //considered a swipe.
 var swipeDistance = 10;
+var barrierSpeed = 200;
+
+//our custom barrier class.
+//any custom class needs to be created outside of any object, method or function
+//and at the same level where the game variable is declared. 
+//this makes the class available anywhere in the game.
+//Barrier Class 
+Barrier = function(game, speed, tintColor){
+	//positions is an Array that stores the barriers positions.
+	var positions = [(game.width - tunnelWidth) / 2, (game.width + tunnelWidth) / 2];
+	//position is a variable that stores a random number either 0 or 1.
+	// and will be used to switch the barriers position.
+	var position = game.rnd.between(0, 1);
+	//the call() method is extending the Phaser.Sprite method to the Barrier Class.  
+	//and lets us invoke sprite placement using this class!
+	//this refers to the Barrier itself, then passes in, game, x and y positions and the key "barrier".
+	Phaser.Sprite.call(this, game, positions[position], -100, "barrier");
+	//cropRect holds a value of a new Rectangle object that we will use to crop the barrier for scaling purposes.
+	//new Rectangle(x,y,width,height) 
+	var cropRect = new Phaser.Rectangle(0,0, tunnelWidth / 2, 24);
+	//this targets the barrier sprite and applies the Rectangle crop over it.
+	this.crop(cropRect);
+	game.physics.enable(this, Phaser.Physics.ARCADE);
+	this.anchor.set(position, 0.5);
+	this.tint = tintColor;
+	this.body.velocity.y = speed;
+};
+
+// this is the blueprint of the creation of a class which extends the
+//Phaser Sprite class
+//Barrier.prototype is extending Phasers Sprite class.
+//Barrier.prototype.constructor is the constructor function that is called to
+//create an object which belongs to the class.
+Barrier.prototype = Object.create(Phaser.Sprite.prototype);
+Barrier.prototype.constructor = Barrier;
 
 window.onload = function() {	
 	game = new Phaser.Game(640, 960, Phaser.AUTO, ""); 
@@ -51,6 +86,7 @@ preload.prototype = {
 		game.load.image("wall","assets/sprites/wall.png");
 		game.load.image("ship", "assets/sprites/ship.png");
 		game.load.image("smoke", "assets/sprites/smoke.png");
+		game.load.image("barrier", "assets/sprites/barrier.png")
 	},
 	create: function(){
 		game.state.start("TitleScreen");
@@ -80,6 +116,7 @@ titleScreen.prototype = {
 		//yoyo method gives yoyo effect plays forward then reverses if set to true.
 		//if yoyo method is set to false it will repeat without reversing.
 		playButtonTween.yoyo(true);
+
 		
 	},
 	startGame: function(){
@@ -126,7 +163,6 @@ playGame.prototype = {
 		game.input.onUp.add(function(){
 			this.ship.canSwipe = true;
 		},this);
-	
 		//add smoke emitter add.emitter(x, y, max) x/y are for placement of emitter and the max amount of particles value.
 		this.smokeEmitter = game.add.emitter(this.ship.x, this.ship.y + 10, 20);
 		//set the image for the particle effect. 
@@ -145,12 +181,20 @@ playGame.prototype = {
 		//lifespan is the life time the particle will last for in milliseconds.
 		//frequency of the emittion in milliseconds, if explode is set to false
 		this.smokeEmitter.start(false, 1000,40);
-
 		//adds vertical movement to the ship using a Tween.
 		//goes from current ship location to y=0 top of the canvas.
 		this.verticalTween = game.add.tween(this.ship).to({
 			y:0
 		}, shipVerticalSpeed, Phaser.Easing.Linear.None, true);
+
+		//barrierGroup is a container for all barriers.
+		this.barrierGroup = game.add.group();
+		//Barrier (line:16) is a new custom class that we made and we can pass thru our own arguments.
+		var barrier = new Barrier(game, barrierSpeed, tintColor);
+		//add.existing(displayObject) method adds an existing displayObject to the game world 
+		game.add.existing(barrier);
+		//tell phaser we want the new barrier object to be part of the barrierGroup.
+		this.barrierGroup.add(barrier);
 
 	},
 
@@ -227,11 +271,9 @@ playGame.prototype = {
 
 
 
-
-
-
 var gameOverScreen = function(game){};
 gameOverScreen.prototype = {
 	create: function(){
 	}
 }
+
