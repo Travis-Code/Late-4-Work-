@@ -10,7 +10,8 @@ var shipVerticalSpeed = 15000;
 //swipeDistance tells us any swipe movement greater than 10 pixels will be
 //considered a swipe.
 var swipeDistance = 10;
-var barrierSpeed = 200;
+var barrierSpeed = 280;
+var barrierGap = 120;
 
 //our custom barrier class.
 //any custom class needs to be created outside of any object, method or function
@@ -19,7 +20,7 @@ var barrierSpeed = 200;
 //Barrier Class 
 Barrier = function(game, speed, tintColor){
 	//positions is an Array that stores the barriers positions.
-	var positions = [(game.width - tunnelWidth) / 2, (game.width + tunnelWidth) / 2];
+	var positions = [(game.width - tunnelWidth) /2, (game.width + tunnelWidth) / 2];
 	//position is a variable that stores a random number either 0 or 1.
 	// and will be used to switch the barriers position.
 	var position = game.rnd.between(0, 1);
@@ -36,7 +37,20 @@ Barrier = function(game, speed, tintColor){
 	this.anchor.set(position, 0.5);
 	this.tint = tintColor;
 	this.body.velocity.y = speed;
+	//update method that will destroy the barrier once it goes off screen. 
+	this.placeBarrier = true;
+
+	Barrier.prototype.update = function(){
+		if(this.placeBarrier && this.y > barrierGap){
+			this.placeBarrier = false;
+			playGame.prototype.addBarrier(this.parent, this.tint);
+		}
+		if(this.y > game.height){
+			this.destroy();
+		}
+	}
 };
+
 
 // this is the blueprint of the creation of a class which extends the
 //Phaser Sprite class
@@ -136,10 +150,10 @@ playGame.prototype = {
 			tunnelBG.tint = tintColor;
 		//add and position left wall to the game.  
 		//add.TileSprite(x,y,width,height,key)
-		var leftWallBG = game.add.tileSprite(- tunnelWidth / 2, 0, game.width / 2, game.height, "wall");
+		var leftWallBG = game.add.tileSprite( -tunnelWidth / 2, 0, game.width / 2, game.height, "wall");
 			leftWallBG.tint = tintColor;
 		//add and position right wall to the game.
-		var rightWallBG = game.add.tileSprite((game.width+tunnelWidth)/2,0,game.width/2,game.height,"wall");
+		var rightWallBG = game.add.tileSprite((game.width + tunnelWidth)/2,0,game.width/2,game.height,"wall");
 			rightWallBG.tint = tintColor;
 		//flip rightWalls x axis horizontally using -1.
 			rightWallBG.tileScale.x = -1;
@@ -195,9 +209,12 @@ playGame.prototype = {
 		game.add.existing(barrier);
 		//tell phaser we want the new barrier object to be part of the barrierGroup.
 		this.barrierGroup.add(barrier);
+		//BUG wtf is going on here it breaks code when uncommented.
+		//it looks like this is adding an extra barrier that is unnecessary since
+		//the Barrier.prototype.update method is already adding
+		//this.addBarrier(this.barrierGroup, tintColor);
 
 	},
-
 
 	//this method deals with movement of the ship.
 	moveShip: function(){
@@ -265,6 +282,12 @@ playGame.prototype = {
 				y: 0
 			}, shipVerticalSpeed, Phaser.Easing.Linear.None, true);
 		}, this)
+	},
+
+	addBarrier: function(group, tintColor){
+		var barrier = new Barrier(game, barrierSpeed, tintColor);
+		game.add.existing(barrier);
+		group.add(barrier);
 	}
 }
 
