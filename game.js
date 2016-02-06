@@ -164,6 +164,8 @@ playGame.prototype = {
 		//make a custom variable that keeps track of which side the ship will be on
 		//since the ship will begin at 0 set the side variable to 0.
 		this.ship.side = 0;
+		//initially start ship not destroyed.
+		this.ship.destroyed = false;
 		//variable that regulates if the ship can move or not.
 		this.ship.canMove = true;
 		//variable that regualtes if user can swipe
@@ -263,6 +265,33 @@ playGame.prototype = {
 			this.restartShip();
 			}
 		}
+
+		if(!this.ship.destroyed){
+			game.physics.arcade.collide(this.ship, this.barrierGroup, function(s,b)
+			{
+				this.ship.destroyed = true;
+				this.smokeEmitter.destroy();
+				var destroyTween = game.add.tween(this.ship).to({
+					x: this.ship.x + game.rnd.between(-100, 100),
+					y: this.ship.y -100,
+					rotation: 10
+				}, 1000, Phaser.Easing.Linear.None, true);
+				destroyTween.onComplete.add(function(){
+					var explosionEmitter = game.add.emitter(this.ship.x,
+						this.ship.y, 200);
+					explosionEmitter.makeParticles("smoke");
+					explosionEmitter.setAlpha(0.5, 1);
+					explosionEmitter.minParticleScale = 0.5;
+					explosionEmitter.maxParticleScale = 2;
+					explosionEmitter.start(true, 2000, null, 200);
+					this.ship.destroy();
+					game.time.events.add(Phaser.Timer.SECOND * 2, function(){
+						game.state.start("GameOverScreen");
+					});
+				}, this);
+			}, null, this)
+		}
+
 	},
 
 
@@ -297,6 +326,7 @@ playGame.prototype = {
 var gameOverScreen = function(game){};
 gameOverScreen.prototype = {
 	create: function(){
+		console.log("game over fool");
 	}
 }
 
