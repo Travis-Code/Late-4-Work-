@@ -6,12 +6,13 @@ var tunnelWidth = 256;
 var shipHorizonalSpeed = 100;
 //shipMoveDelay: stop movement of ship while in tween.
 var shipMoveDelay = 0;
-var shipVerticalSpeed = 15000;
+var shipVerticalSpeed = 15000000;
 //swipeDistance tells us any swipe movement greater than 10 pixels will be
 //considered a swipe.
 var swipeDistance = 10;
-var barrierSpeed = 280;
+var barrierSpeed = 680;
 var barrierGap = 120;
+var shipHealth = 1;
 
 //our custom barrier class.
 //any custom class needs to be created outside of any object, method or function
@@ -161,6 +162,13 @@ playGame.prototype = {
 		this.shipPositions = [(game.width-tunnelWidth) / 2 + 32,(game.width+tunnelWidth) / 2 - 32];
 		//add the ship to the game and make its position left of the wall.
 		this.ship = game.add.sprite(this.shipPositions[0], 860,"ship");
+		
+
+
+		/* NEED TO FIX THIS.
+		this.ship.scale.x = -538;
+        this.ship.scale.y = -532;*/
+
 		//make a custom variable that keeps track of which side the ship will be on
 		//since the ship will begin at 0 set the side variable to 0.
 		this.ship.side = 0;
@@ -200,7 +208,7 @@ playGame.prototype = {
 		//adds vertical movement to the ship using a Tween.
 		//goes from current ship location to y=0 top of the canvas.
 		this.verticalTween = game.add.tween(this.ship).to({
-			y:0
+			y:-200
 		}, shipVerticalSpeed, Phaser.Easing.Linear.None, true);
 
 		//barrierGroup is a container for all barriers.
@@ -259,16 +267,36 @@ playGame.prototype = {
 		this.smokeEmitter.y = this.ship.y;
 		//if canSwipe is true check to see if the activePointer input is greater
 		//than the swipeDistance global variable.  if true call restartShip() method
-		if(this.ship.canSwipe){
+		
+		// I DON'T LIKE THIS METHOD.
+		/*if(this.ship.canSwipe){
 			if(Phaser.Point.distance(game.input.activePointer.positionDown,
 				game.input.activePointer.position) > swipeDistance){
 			this.restartShip();
 			}
-		}
+		}*/
+
+		//update method that checks to see if this.ship.destroyed = false.
+		//if so it checks to see if this.ship and this.barrierGroup are colliding.
+		//I implemented a shipHealth property that gives x amount of health/life to the ship.
+		//if shipHealth is greater than or equal to 4
+		//it will set the ship to be destroyed. which will lock the game into this method,
+		//and not call the initial ship.destoryed = true variable.
+		//it will then call destroy() on the smokeEmitter element.
+		//next we create a var that will hold a tween which will destroy the ship.  
+		//The destroyTween will cause the ship to randomly spin the ship.
+		//after the tween is complete we will call the destroyTween.onComplete.add()
+		//which will add an explosion emitter to the ship.
+		//after the explosion the ship will call game.state.start("GameOverScreen");
+		// and will switch to the game over state.
 
 		if(!this.ship.destroyed){
 			game.physics.arcade.collide(this.ship, this.barrierGroup, function(s,b)
 			{
+				console.log("you got hit " + shipHealth );
+				shipHealth += 1;
+
+			if(shipHealth >= 4){
 				this.ship.destroyed = true;
 				this.smokeEmitter.destroy();
 				var destroyTween = game.add.tween(this.ship).to({
@@ -289,7 +317,9 @@ playGame.prototype = {
 						game.state.start("GameOverScreen");
 					});
 				}, this);
-			}, null, this)
+			}
+		}, null, this)
+
 		}
 
 	},
@@ -321,12 +351,32 @@ playGame.prototype = {
 }
 
 
-
+//Helvetica
 
 var gameOverScreen = function(game){};
 gameOverScreen.prototype = {
 	create: function(){
-		console.log("game over fool");
+		var style = {font: "65px Helvetica", fill: "#ff0044", align: "center"}
+		game.stage.backgroundColor = 0x5d5d5d;
+		var text = game.add.text(game.world.centerX, game.world.centerY, "Wiped Out \nPlay Again?", style);
+		text.anchor.set(0.5);
+
+		console.log("game over!");
+
+		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame);
+		playButton.anchor.set(0.5);
+		//tween(target).to(properties, ease, autoStart, delay, repeat)
+		var playButtonTween = game.add.tween(playButton).to({
+			width:220,
+			height:220
+		}, 1500, "Linear", true, 0, -1);
+		//yoyo method gives yoyo effect plays forward then reverses if set to true.
+		//if yoyo method is set to false it will repeat without reversing.
+		playButtonTween.yoyo(true);
+	},
+	startGame: function(){
+		game.state.start("PlayGame");
 	}
+
 }
 
