@@ -10,10 +10,12 @@ var shipVerticalSpeed = 15000000;
 //swipeDistance tells us any swipe movement greater than 10 pixels will be
 //considered a swipe.
 var swipeDistance = 10;
-var barrierSpeed = Math.random()*1000+100;
-var barrierGap = 120;
+//var barrierSpeed = Math.random()*1000+30;
+var barrierSpeed = 280;
+var barrierGap = 190;
 var shipHealth = 1;
-
+var barrierIncreaseSpeed = 1.03;
+var tunnelBGSpeed = 900;
 
 
 //our custom barrier class.
@@ -23,17 +25,17 @@ var shipHealth = 1;
 //Barrier Class 
 Barrier = function(game, speed, tintColor){
 	//positions is an Array that stores the barriers positions.
-	var positions = [(game.width - tunnelWidth) /2+30, (game.width + tunnelWidth) / 2];
+	var positions = [(game.width - tunnelWidth) /2+30, (game.width + tunnelWidth) / 2-30];
 	//position is a variable that stores a random number either 0 or 1.
 	// and will be used to switch the barriers position.
 	var position = game.rnd.between(0, 1);
 	//the call() method is extending the Phaser.Sprite method to the Barrier Class.  
 	//and lets us invoke sprite placement using this class!
 	//this refers to the Barrier itself, then passes in, game, x and y positions and the key "barrier".
-	Phaser.Sprite.call(this, game, positions[position], -190, "ship");
+	Phaser.Sprite.call(this, game, positions[position], -190, "barrier");
 	//cropRect holds a value of a new Rectangle object that we will use to crop the barrier for scaling purposes.
 	//new Rectangle(x,y,width,height) 
-	var cropRect = new Phaser.Rectangle(0,0, tunnelWidth / 2, 94);
+	var cropRect = new Phaser.Rectangle(0,0, tunnelWidth / 2, 184);
 	//this targets the barrier sprite and applies the Rectangle crop over it.
 	this.crop(cropRect);
 	game.physics.enable(this, Phaser.Physics.ARCADE);
@@ -51,6 +53,7 @@ Barrier = function(game, speed, tintColor){
 		if(this.y > game.height){
 			this.destroy();
 		}
+		
 	}
 };
 
@@ -103,9 +106,17 @@ preload.prototype = {
 		game.load.image("wall","assets/sprites/grassTile.png");
 		game.load.image("ship", "assets/sprites/scionTopView.png");
 		game.load.image("smoke", "assets/sprites/smoke.png");
-		game.load.image("barrier", "assets/sprites/barrier.png")
+		game.load.image("barrier", "assets/sprites/shitVic.png");
+		game.load.audio("bgmusic", ["assets/sounds/bgmusic.mp3","assets/sounds/bgmusic.ogg"]);
+		game.load.audio("explosion", ["assets/sounds/explosion.mp3","assets/sounds/explosion.ogg"]);
+		game.load.audio("carStart", ["assets/sounds/carStart.mp3","assets/sounds/carStart.ogg"]);
+		game.load.audio("carStart", ["assets/sounds/carStart.mp3","assets/sounds/carStart.ogg"]);
+		game.load.audio("carCrash", ["assets/sounds/Crash.mp3","assets/sounds/Crash.ogg"]);
+		game.load.audio("honk", ["assets/sounds/honk.mp3","assets/sounds/honk.ogg"]);
+
 	},
 	create: function(){
+
 		game.state.start("TitleScreen");
 	}
 }
@@ -117,6 +128,7 @@ titleScreen.prototype = {
 		var titleBG = game.add.tileSprite(0, 0, game.width, game.height, "backsplash");
 		//tint property tints an image.
 		titleBG.tint = bgColors[game.rnd.between(0,bgColors.length-1)];
+
 		//set random background color.
 		//game.stage.backgroundColor = bgColors[game.rnd.between(0,bgColors.length-1)];
 		var title = game.add.image(game.width/2, 310, "title");
@@ -129,7 +141,8 @@ titleScreen.prototype = {
 		//yoyo method gives yoyo effect plays forward then reverses if set to true.
 		//if yoyo method is set to false it will repeat without reversing.
 		titleTween.yoyo(true);
-
+		this.startCar = game.add.audio("carStart");
+		this.startCar.play();
 
 		// button method uses callback usually in context with this to specified method.
 		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame);
@@ -146,17 +159,10 @@ titleScreen.prototype = {
 		
 	},
 	startGame: function(){
-		var spr_bg = this.game.add.graphics(0, 0);        
-		spr_bg.beginFill(this.fadeColor, 1);        
-		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
-		spr_bg.alpha = 0;        
-		spr_bg.endFill();        
-		s = this.game.add.tween(spr_bg)        
-		s.to({ alpha: 1 }, 600, null, this)        
-		s.start();    
+
+				console.log("switching to play game state");
+
 		game.state.start("PlayGame");
-
-
 	},
 
 /*
@@ -181,11 +187,13 @@ fade: function (nextState){
 var playGame = function(game){};
 playGame.prototype = {
 	create: function(){
+		this.bgMusic = game.add.audio("bgmusic");
+		this.bgMusic.loopFull(1);
 		tintColor = bgColors[game.rnd.between(0,bgColors.length-1)];
 		//add tunnelbg to the game. make it cover the entire canvas.
 		//add.TileSprite(x,y,width,height,key)
 		var tunnelBG = game.add.tileSprite(0, 0, game.width, game.height, "tunnelbg");
-		tunnelBG.autoScroll(0, 900);
+		tunnelBG.autoScroll(0, tunnelBGSpeed+= 100);
 		//tunnelBG.anchor.set(0.0);
 		//add and position left wall to the game.  
 		//add.TileSprite(x,y,width,height,key)
@@ -199,7 +207,7 @@ playGame.prototype = {
 		//flip rightWalls x axis horizontally using -1.
 			rightWallBG.tileScale.x = -1;
 		//make array of possible ship positions in relation to left and right walls.
-		this.shipPositions = [(game.width-tunnelWidth) / 2 + 32,(game.width+tunnelWidth) / 2 - 32];
+		this.shipPositions = [(game.width-tunnelWidth) / 2 + 52,(game.width+tunnelWidth) / 2 - 52];
 		//add the ship to the game and make its position left of the wall.
 		this.ship = game.add.sprite(this.shipPositions[0], 860,"ship");
 		
@@ -274,6 +282,8 @@ playGame.prototype = {
 			this.ship.canMove = false;
 			//if ship.side is 1 then turns to 0, if ship.side is 0 then turns to 1.
 			this.ship.side = 1 - this.ship.side;
+			this.ship.angle = 30 - this.ship.angle;
+			this.ship.angle = 0;
 			//make tween on ship that moves it from the current side to the opposite side.
 			var horizontalTween = game.add.tween(this.ship).to({
 				x:this.shipPositions[this.ship.side]
@@ -303,18 +313,18 @@ playGame.prototype = {
 	},
 
 		update: function(){
-		this.smokeEmitter.x = this.ship.x;
-		this.smokeEmitter.y = this.ship.y;
+		this.smokeEmitter.x = this.ship.x+9;
+		this.smokeEmitter.y = this.ship.y+60;
 		//if canSwipe is true check to see if the activePointer input is greater
 		//than the swipeDistance global variable.  if true call restartShip() method
 		
 		// I DON'T LIKE THIS METHOD.
-		/*if(this.ship.canSwipe){
-			if(Phaser.Point.distance(game.input.activePointer.positionDown,
-				game.input.activePointer.position) > swipeDistance){
+		if(this.ship.canSwipe){
+			/*if(Phaser.Point.distance(game.input.activePointer.positionDown,
+				game.input.activePointer.position) > swipeDistance){*/
 			this.restartShip();
 			}
-		}*/
+		//}
 
 		//update method that checks to see if this.ship.destroyed = false.
 		//if so it checks to see if this.ship and this.barrierGroup are colliding.
@@ -335,7 +345,11 @@ playGame.prototype = {
 			{
 				console.log("you got hit " + shipHealth );
 				shipHealth += 1;
+				var explosionSound = game.add.audio("explosion");
+				explosionSound.play();
+				console.log("watch it!");
 
+					
 			if(shipHealth >= 4){
 				this.ship.destroyed = true;
 				this.smokeEmitter.destroy();
@@ -345,12 +359,16 @@ playGame.prototype = {
 					rotation: 10
 				}, 1000, Phaser.Easing.Linear.None, true);
 				destroyTween.onComplete.add(function(){
+					this.bgMusic.stop();
+					explosionSound.play();
 					var explosionEmitter = game.add.emitter(this.ship.x, this.ship.y, 200);
 					explosionEmitter.makeParticles("smoke");
 					explosionEmitter.setAlpha(0.5, 1);
 					explosionEmitter.minParticleScale = 0.5;
 					explosionEmitter.maxParticleScale = 2;
 					explosionEmitter.start(true, 2000, null, 200);
+					var carCrash = game.add.audio("carCrash");
+					carCrash.play();
 					this.ship.destroy();
 					game.time.events.add(Phaser.Timer.SECOND * 2, function(){
 					shipHealth = 1;
@@ -372,6 +390,17 @@ playGame.prototype = {
 	//then once the change to the position of 860 to y is complete it will start
 	//the tween of the ship back to y: 0 again.
 	restartShip: function(){
+
+		if(!this.ship.destroyed && this.ship.alpha ==1){
+			barrierSpeed *= barrierIncreaseSpeed;
+			for(var i = 0; i < this.barrierGroup.length; i++){
+				this.barrierGroup.getChildAt(i).body.velocity.y = barrierSpeed;
+			}
+			if (barrierSpeed == 300){
+				barrierSpeed = 300;
+			}
+		}
+
 		this.ship.canSwipe = false;
 		this.verticalTween.stop();
 		this.verticalTween = game.add.tween(this.ship).to({
@@ -391,20 +420,28 @@ playGame.prototype = {
 	}
 }
 
-
-
-
 var gameOverScreen = function(game){};
 gameOverScreen.prototype = {
 	create: function(){
 		var gameOverBG = bgColors[game.rnd.between(0,bgColors.length-1)];
 		var style = {font: "65px Helvetica", fill: "#ff0044", align: "center"}
 		game.stage.backgroundColor = gameOverBG;
-		var text = game.add.text(game.world.centerX, game.world.centerY, "Wiped Out \nPlay Again?", style);
+		var text = game.add.text(game.world.centerX, game.world.centerY +100, "Again?", style);
 		text.anchor.set(0.5);
 
+		//set random background color.
+		//game.stage.backgroundColor = bgColors[game.rnd.between(0,bgColors.length-1)];
+		var title = game.add.image(game.width/2, 310, "title");
+		title.tint = titleColors[game.rnd.between(0,titleColors.length-1)];
+		title.anchor.set(0.5);
+		var titleTween = game.add.tween(title).to({
+			width:420,
+			height:420
+		}, 1500, "Linear", true, 0, -1);
+		//yoyo method gives yoyo effect plays forward then reverses if set to true.
+		//if yoyo method is set to false it will repeat without reversing.
+		titleTween.yoyo(true);
 		console.log("game over!");
-
 		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame);
 		playButton.anchor.set(0.5);
 		//tween(target).to(properties, ease, autoStart, delay, repeat)
@@ -417,6 +454,10 @@ gameOverScreen.prototype = {
 		playButtonTween.yoyo(true);
 	},
 	startGame: function(){
+		var carHonk = game.add.audio("honk");
+			carHonk.play();
+		//reset barrierSpeed back to 280 for next game.
+		barrierSpeed = 280;
 		game.state.start("PlayGame");
 	}
 
