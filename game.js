@@ -18,6 +18,8 @@ var barrierIncreaseSpeed = 1.03;
 var tunnelBGSpeed = 900;
 
 
+
+
 //our custom barrier class.
 //any custom class needs to be created outside of any object, method or function
 //and at the same level where the game variable is declared. 
@@ -33,6 +35,7 @@ Barrier = function(game, speed, tintColor){
 	//and lets us invoke sprite placement using this class!
 	//this refers to the Barrier itself, then passes in, game, x and y positions and the key "barrier".
 	Phaser.Sprite.call(this, game, positions[position], -190, "barrier");
+	//Phaser.Sprite.call(this, game, 100, 100, "ship");
 	//cropRect holds a value of a new Rectangle object that we will use to crop the barrier for scaling purposes.
 	//new Rectangle(x,y,width,height) 
 	var cropRect = new Phaser.Rectangle(0,0, tunnelWidth / 2, 184);
@@ -42,6 +45,7 @@ Barrier = function(game, speed, tintColor){
 	this.anchor.set(position, 0.5);
 	this.tint = bgColors[game.rnd.between(0,bgColors.length-1)];
 	this.body.velocity.y = speed;
+	this.body.immovable = false;
 	//update method that will destroy the barrier once it goes off screen. 
 	this.placeBarrier = true;
 
@@ -53,12 +57,11 @@ Barrier = function(game, speed, tintColor){
 		if(this.y > game.height){
 			this.destroy();
 		}
-		
+
 	}
 };
 
-
-// this is the blueprint of the creation of a class which extends the
+//this is the blueprint of the creation of a class which extends the
 //Phaser Sprite class
 //Barrier.prototype is extending Phasers Sprite class.
 //Barrier.prototype.constructor is the constructor function that is called to
@@ -99,10 +102,11 @@ preload.prototype = {
 		//setPreloadSprite(loadingBar);" turns an image into a 
 		//loading bar which grows as assets are being loaded.
 		game.load.setPreloadSprite(loadingBar); 
-		game.load.image("title","assets/sprites/roadRageTitle.png");
+		game.load.image("title","assets/sprites/titleLate4Work.png");
+		game.load.image("ragetitle","assets/sprites/roadRageTitle.png");
 		game.load.image("playbutton", "assets/sprites/playbutton.png");
 		game.load.image("backsplash", "assets/sprites/backsplash.png");
-		game.load.image("tunnelbg", "assets/sprites/roadSprite.png");
+		game.load.image("tunnelbg", "assets/sprites/roadSpriteSide.png");
 		game.load.image("wall","assets/sprites/grassTile.png");
 		game.load.image("ship", "assets/sprites/scionTopView.png");
 		game.load.image("smoke", "assets/sprites/smoke.png");
@@ -145,7 +149,7 @@ titleScreen.prototype = {
 		this.startCar.play();
 
 		// button method uses callback usually in context with this to specified method.
-		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame);
+		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame, this);
 		playButton.anchor.set(0.5);
 		//tween(target).to(properties, ease, autoStart, delay, repeat)
 		var playButtonTween = game.add.tween(playButton).to({
@@ -161,27 +165,38 @@ titleScreen.prototype = {
 	startGame: function(){
 
 				console.log("switching to play game state");
-
-		game.state.start("PlayGame");
+				this.fade("PlayGame");
+		//game.state.start("PlayGame");
 	},
 
-/*
-fade: function (nextState){        
-	var spr_bg = this.game.add.graphics(0, 0);        
-	spr_bg.beginFill(this.fadeColor, 1);        
-	spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
-	spr_bg.alpha = 0;        
-	spr_bg.endFill();        
-	this.nextState = nextState;        
-	s = this.game.add.tween(spr_bg)        
-	s.to({ alpha: 1 }, 500, null)        
-	s.onComplete.add(this.changeState, this)        
-	s.start();    },    
+	//fade state method.
+		fade: function (nextState){
+		var spr_bg = this.game.add.graphics(0, 0);        
+		spr_bg.beginFill(this.fadeColor, 1);        
+		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
+		spr_bg.alpha = 0;        
+		spr_bg.endFill();        
+		this.nextState = nextState;        
+		s = this.game.add.tween(spr_bg)        
+		s.to({ alpha: 1 }, 500, null)        
+		s.onComplete.add(this.changeState, this)        
+		s.start();    
+	},   
+
 	changeState: function (){        
 		this.game.state.start(this.nextState);        
 		this.fadeOut();    
-	},    */
-	
+	},    
+	fadeOut: function (){        
+		var spr_bg = this.game.add.graphics(0, 0);        
+		spr_bg.beginFill(this.fadeColor, 1);        
+		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
+		spr_bg.alpha = 1;        
+		spr_bg.endFill();        
+		s = this.game.add.tween(spr_bg)        
+		s.to({ alpha: 0 }, 600, null)        
+		s.start();    
+	},
 }
 
 var playGame = function(game){};
@@ -211,8 +226,6 @@ playGame.prototype = {
 		//add the ship to the game and make its position left of the wall.
 		this.ship = game.add.sprite(this.shipPositions[0], 860,"ship");
 		
-
-
 		/* NEED TO FIX THIS.
 		this.ship.scale.x = -538;
         this.ship.scale.y = -532;*/
@@ -271,6 +284,19 @@ playGame.prototype = {
 		//it looks like this is adding an extra barrier that is unnecessary since
 		//the Barrier.prototype.update method is already adding
 		//this.addBarrier(this.barrierGroup, tintColor);
+		
+		//Earthquake effect
+		//we needto add margin tot he world, so the camera can move
+		var margin = 50;
+		//and set the world's bounds according to the given margin
+		var x = -margin;
+		var y = -margin;
+		var w = game.world.width + margin*2;
+		var h = game.world.height +margin*2;
+		//it's not necessary to increase height, we do it to keep uniformity
+		game.world.setBounds(x,y,w,h);
+		//we make sure camera is at position(0,0)
+		game.world.camera.position.set(0);
 
 	},
 
@@ -312,19 +338,25 @@ playGame.prototype = {
 		}
 	},
 
-		update: function(){
+	update: function(){
 		this.smokeEmitter.x = this.ship.x+9;
 		this.smokeEmitter.y = this.ship.y+60;
 		//if canSwipe is true check to see if the activePointer input is greater
 		//than the swipeDistance global variable.  if true call restartShip() method
 		
-		// I DON'T LIKE THIS METHOD.
+		// I DON'T LIKE THIS STATEMENT.
 		if(this.ship.canSwipe){
 			/*if(Phaser.Point.distance(game.input.activePointer.positionDown,
 				game.input.activePointer.position) > swipeDistance){*/
 			this.restartShip();
+			//this.addQuake();
+
 			}
 		//}
+		if(shipHealth  <100){
+			//console.log(shipHealth);
+
+		}
 
 		//update method that checks to see if this.ship.destroyed = false.
 		//if so it checks to see if this.ship and this.barrierGroup are colliding.
@@ -347,7 +379,12 @@ playGame.prototype = {
 				shipHealth += 1;
 				var explosionSound = game.add.audio("explosion");
 				explosionSound.play();
+				this.addQuake();
 				console.log("watch it!");
+				var carHonk = game.add.audio("honk");
+				carHonk.play();
+
+
 
 					
 			if(shipHealth >= 4){
@@ -370,11 +407,14 @@ playGame.prototype = {
 					var carCrash = game.add.audio("carCrash");
 					carCrash.play();
 					this.ship.destroy();
+					//this.fade("GameOverScreen");
+
 					game.time.events.add(Phaser.Timer.SECOND * 2, function(){
 					shipHealth = 1;
-					game.state.start("GameOverScreen");
+					//game.state.start("GameOverScreen");
+					this.fade("GameOverScreen");
 
-					});
+					}, this);
 				}, this);
 			}
 		}, null, this)
@@ -382,6 +422,39 @@ playGame.prototype = {
 		}
 
 	},
+
+	//fade state method.
+		fade: function (nextState){
+		var spr_bg = this.game.add.graphics(0, 0);        
+		spr_bg.beginFill(this.fadeColor, 1);        
+		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
+		spr_bg.alpha = 0;        
+		spr_bg.endFill();        
+		this.nextState = nextState;        
+		s = this.game.add.tween(spr_bg)        
+		s.to({ alpha: 1 }, 500, null)        
+		s.onComplete.add(this.changeState, this)        
+		s.start();    
+	},   
+
+	changeState: function (){        
+		this.game.state.start(this.nextState);        
+		this.fadeOut();    
+	},    
+	fadeOut: function (){        
+		var spr_bg = this.game.add.graphics(0, 0);        
+		spr_bg.beginFill(this.fadeColor, 1);        
+		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
+		spr_bg.alpha = 1;        
+		spr_bg.endFill();        
+		s = this.game.add.tween(spr_bg)        
+		s.to({ alpha: 0 }, 600, null)        
+		s.start();    
+	},
+
+
+
+
 
 
 	//restartShip method will switch stop any interaction with user until it is completed.
@@ -396,8 +469,8 @@ playGame.prototype = {
 			for(var i = 0; i < this.barrierGroup.length; i++){
 				this.barrierGroup.getChildAt(i).body.velocity.y = barrierSpeed;
 			}
-			if (barrierSpeed == 300){
-				barrierSpeed = 300;
+			if (barrierSpeed >= 400){
+				barrierSpeed = 400;
 			}
 		}
 
@@ -417,7 +490,38 @@ playGame.prototype = {
 		var barrier = new Barrier(game, barrierSpeed, tintColor);
 		game.add.existing(barrier);
 		group.add(barrier);
-	}
+	},
+
+
+	addQuake: function() {
+		// define the camera offset for the quake
+		var rumbleOffset = 10;
+		// we need to move according to the camera's current position
+		var properties = {
+		  x: game.camera.x - rumbleOffset
+		};
+		// we make it a relly fast movement
+		var duration = 100;
+		// because it will repeat
+		var repeat = 4;
+		// we use bounce in-out to soften it a little bit
+		var ease = Phaser.Easing.Bounce.InOut;
+		var autoStart = false;
+		// a little delay because we will run it indefinitely
+		var delay = 0;
+		// we want to go back to the original position
+		var yoyo = true;
+		var quake = game.add.tween(game.camera)
+		  .to(properties, duration, ease, autoStart, delay, 4, yoyo);
+		// we're using this line for the example to run indefinitely
+		//quake.onComplete.addOnce(addQuake);
+		// let the earthquake begins
+		quake.start();
+}
+
+
+
+
 }
 
 var gameOverScreen = function(game){};
@@ -426,12 +530,11 @@ gameOverScreen.prototype = {
 		var gameOverBG = bgColors[game.rnd.between(0,bgColors.length-1)];
 		var style = {font: "65px Helvetica", fill: "#ff0044", align: "center"}
 		game.stage.backgroundColor = gameOverBG;
-		var text = game.add.text(game.world.centerX, game.world.centerY +100, "Again?", style);
-		text.anchor.set(0.5);
-
+		//var text = game.add.text(game.width/2, game.world.centerY+100, "Again?", style);
+		//text.anchor.set(0.5);
 		//set random background color.
 		//game.stage.backgroundColor = bgColors[game.rnd.between(0,bgColors.length-1)];
-		var title = game.add.image(game.width/2, 310, "title");
+		var title = game.add.image(game.width/2, 310, "ragetitle");
 		title.tint = titleColors[game.rnd.between(0,titleColors.length-1)];
 		title.anchor.set(0.5);
 		var titleTween = game.add.tween(title).to({
@@ -442,7 +545,7 @@ gameOverScreen.prototype = {
 		//if yoyo method is set to false it will repeat without reversing.
 		titleTween.yoyo(true);
 		console.log("game over!");
-		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame);
+		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame, this);
 		playButton.anchor.set(0.5);
 		//tween(target).to(properties, ease, autoStart, delay, repeat)
 		var playButtonTween = game.add.tween(playButton).to({
@@ -452,14 +555,45 @@ gameOverScreen.prototype = {
 		//yoyo method gives yoyo effect plays forward then reverses if set to true.
 		//if yoyo method is set to false it will repeat without reversing.
 		playButtonTween.yoyo(true);
+
 	},
 	startGame: function(){
 		var carHonk = game.add.audio("honk");
-			carHonk.play();
+		carHonk.play();
 		//reset barrierSpeed back to 280 for next game.
 		barrierSpeed = 280;
-		game.state.start("PlayGame");
-	}
+		this.fade("PlayGame");
+		//game.state.start("PlayGame");
+	},
+
+		//fade state method.
+		fade: function (nextState){
+		var spr_bg = this.game.add.graphics(0, 0);        
+		spr_bg.beginFill(this.fadeColor, 1);        
+		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
+		spr_bg.alpha = 0;        
+		spr_bg.endFill();        
+		this.nextState = nextState;        
+		s = this.game.add.tween(spr_bg)        
+		s.to({ alpha: 1 }, 500, null)        
+		s.onComplete.add(this.changeState, this)        
+		s.start();    
+	},   
+
+	changeState: function (){        
+		this.game.state.start(this.nextState);        
+		this.fadeOut();    
+	},    
+	fadeOut: function (){        
+		var spr_bg = this.game.add.graphics(0, 0);        
+		spr_bg.beginFill(this.fadeColor, 1);        
+		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
+		spr_bg.alpha = 1;        
+		spr_bg.endFill();        
+		s = this.game.add.tween(spr_bg)        
+		s.to({ alpha: 0 }, 600, null)        
+		s.start();    
+	},
 
 }
 
