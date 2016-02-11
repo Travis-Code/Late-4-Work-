@@ -1,5 +1,5 @@
 var game;
-var curse = ["Watch it you suka", "Whoops, MY BAD!", "Outta MY way!","Not my fault","chee hee!","Aisus!"];
+var curse = ["HO, BRAH!", "Watch it you Suka!", "Whoops, MY BAD!", "AHHHH!","eh, Not My fault...","Chee Hee!","MY RIMS!"];
 var bgColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a,
 0x588c73, 0x8c4646, 0x2a5b84, 0x73503c];
 var titleColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a];
@@ -7,12 +7,12 @@ var tunnelWidth = 256;
 var shipHorizonalSpeed = 100;
 //shipMoveDelay: stop movement of ship while in tween.
 var shipMoveDelay = 0;
-var shipVerticalSpeed = 500000;//15000000;
+var shipVerticalSpeed = 15000000;
 //swipeDistance tells us any swipe movement greater than 10 pixels will be
 //considered a swipe.
 var swipeDistance = 10;
 //var barrierSpeed = Math.random()*1000+30;
-var barrierSpeed = 480;
+var barrierSpeed = 680;
 var barrierGap = 200;
 var shipHealth = 1;
 var barrierIncreaseSpeed = 1.03;
@@ -47,6 +47,7 @@ Barrier = function(game, speed, tintColor){
 	this.body.immovable = false;
 	//update method that will destroy the barrier once it goes off screen. 
 	this.placeBarrier = true;
+	this.collideCar = false;
 
 	Barrier.prototype.update = function(){
 		if(this.placeBarrier && this.y > barrierGap){
@@ -55,8 +56,9 @@ Barrier = function(game, speed, tintColor){
 		}
 		if(this.y > game.height){
 			this.destroy();
-
 		} 
+	
+
 	}
 };
 
@@ -116,7 +118,6 @@ preload.prototype = {
 		game.load.audio("carCrash", ["assets/sounds/Crash.mp3","assets/sounds/Crash.ogg"]);
 		game.load.audio("honk", ["assets/sounds/honk.mp3","assets/sounds/honk.ogg"]);
 		game.load.audio("screech", ["assets/sounds/screech.mp3","assets/sounds/screech.ogg"]);
-
 	},
 	create: function(){
 
@@ -158,11 +159,9 @@ titleScreen.prototype = {
 		//yoyo method gives yoyo effect plays forward then reverses if set to true.
 		//if yoyo method is set to false it will repeat without reversing.
 		playButtonTween.yoyo(true);
-
-		
 	},
 	startGame: function(){
-				game.time.events.add(Phaser.Timer.SECOND * 1, function(){
+				game.time.events.add(Phaser.Timer.SECOND * 0.4, function(){
 					console.log("it werks");
 					this.fade("PlayGame");
 				}, this);
@@ -210,7 +209,7 @@ playGame.prototype = {
 		//add tunnelbg to the game. make it cover the entire canvas.
 		//add.TileSprite(x,y,width,height,key)
 		var tunnelBG = game.add.tileSprite(0, 0, game.width, game.height, "tunnelbg");
-		tunnelBG.autoScroll(0, tunnelBGSpeed+= 100);
+			tunnelBG.autoScroll(0, tunnelBGSpeed+= 100);
 		//tunnelBG.anchor.set(0.0);
 		//add and position left wall to the game.  
 		//add.TileSprite(x,y,width,height,key)
@@ -224,14 +223,9 @@ playGame.prototype = {
 		//flip rightWalls x axis horizontally using -1.
 			rightWallBG.tileScale.x = -1;
 		//make array of possible ship positions in relation to left and right walls.
-		this.shipPositions = [(game.width-tunnelWidth) / 2 + 52,(game.width+tunnelWidth) / 2 - 52];
+		this.shipPositions = [(game.width-tunnelWidth) / 2 + 52,(game.width+tunnelWidth) / 2 - 52]; 
 		//add the ship to the game and make its position left of the wall.
-		this.ship = game.add.sprite(this.shipPositions[0], 860,"ship");
-		
-		/* NEED TO FIX THIS.
-		this.ship.scale.x = -538;
-        this.ship.scale.y = -532;*/
-
+		this.ship = game.add.sprite(this.shipPositions[0], 860, "ship");
 		//make a custom variable that keeps track of which side the ship will be on
 		//since the ship will begin at 0 set the side variable to 0.
 		this.ship.side = 0;
@@ -277,7 +271,7 @@ playGame.prototype = {
 		//barrierGroup is a container for all barriers.
 		this.barrierGroup = game.add.group();
 		//Barrier (line:16) is a new custom class that we made and we can pass thru our own arguments.
-		var barrier = new Barrier(game, barrierSpeed, tintColor);
+		var barrier = new Barrier(game, barrierSpeed, tintColor, this.ship);
 		//add.existing(displayObject) method adds an existing displayObject to the game world 
 		game.add.existing(barrier);
 		//tell phaser we want the new barrier object to be part of the barrierGroup.
@@ -299,7 +293,6 @@ playGame.prototype = {
 		game.world.setBounds(x,y,w,h);
 		//we make sure camera is at position(0,0)
 		game.world.camera.position.set(0);
-
 	},
 
 	//this method deals with movement of the ship.
@@ -356,18 +349,12 @@ playGame.prototype = {
 		
 		// I DON'T LIKE THIS STATEMENT.
 		if(this.ship.canSwipe){
-			/*if(Phaser.Point.distance(game.input.activePointer.positionDown,
-				game.input.activePointer.position) > swipeDistance){*/
-			this.restartShip();
-			//this.addQuake();
-
+			if(Phaser.Point.distance(game.input.activePointer.positionDown,
+				game.input.activePointer.position) > swipeDistance){
+			//this.restartShip();
 			}
-		//}
-		if(shipHealth  <100){
-			//console.log(shipHealth);
-
 		}
-
+		
 		//update method that checks to see if this.ship.destroyed = false.
 		//if so it checks to see if this.ship and this.barrierGroup are colliding.
 		//I implemented a shipHealth property that gives x amount of health/life to the ship.
@@ -383,29 +370,58 @@ playGame.prototype = {
 		// and will switch to the game over state.
 
 
+		//fix this!
+		//game.physics.arcade.overlap(this.ship, this.barrierGroup, killBarrier, null, this);
+
+
 
 
 		if(!this.ship.destroyed){
 			game.physics.arcade.collide(this.ship, this.barrierGroup, function(s,b)
 			{
+				var destroyB = game.add.tween(b).to({
+							x: b.x + game.rnd.between(-100, 100),
+							y: b.y + game.rnd.between(-500, 800),
+							rotation: 5
+						}, 1000, Phaser.Easing.Linear.None, true);
+						destroyB.onComplete.add(function(){
+							var explosionEmitter = game.add.emitter(b.x, b.y, 200);
+							explosionEmitter.makeParticles("smoke");
+							explosionEmitter.setAlpha(0.5, 1);
+							explosionEmitter.minParticleScale = 0.5;
+							explosionEmitter.maxParticleScale = 2;
+							explosionEmitter.start(true, 2000, null, 200);
+							var bCrash = game.add.audio("carCrash");
+							bCrash.play();
+							b.destroy();
+						}, this);
+
 				console.log("you got hit " + shipHealth );
 				shipHealth += 1;
 				var explosionSound = game.add.audio("explosion");
 				explosionSound.play();
 				this.addQuake();
-				var text = game.add.text(game.width/2, game.world.centerY+100, curser, style);
 				var curser = curse[game.rnd.between(0,curse.length-1)];
 				var style = {font: "65px Impact", fill: "#ffffff", align: "center"}
 				var text = game.add.text(game.width/2, game.world.centerY+100, curser, style);
 				text.anchor.set(0.5);
+				text.destroy;
+
+				/*var bText = game.add.text(b.x, b.y, curser, style);
+				game.time.events.add(Phaser.Timer.SECOND * 1, function(){
+					bText.destroy();
+				}, this);
+				*/
+
+
 
 				if(barrierSpeed == 800){
-					game.time.events.add(Phaser.Timer.SECOND * 0.2, function(){
+					game.time.events.add(Phaser.Timer.SECOND * 0.3, function(){
 						text.destroy();
 					}, this);
 				}
 				else{
-					game.time.events.add(Phaser.Timer.SECOND * 0.5, function(){
+					game.time.events.add(Phaser.Timer.SECOND * 0.6, function(){
 						text.destroy();
 					}, this);
 
@@ -413,7 +429,6 @@ playGame.prototype = {
 
 				var carHonk = game.add.audio("honk");
 				carHonk.play();
-
 
 			if(shipHealth >= 4){
 				this.ship.destroyed = true;
@@ -450,6 +465,11 @@ playGame.prototype = {
 		}
 
 	},
+
+/*
+	killBarrier: function (ship,barrier){
+		this.barrierGroup.kill();
+	}*/
 
 	//fade state method.
 		fade: function (nextState){
