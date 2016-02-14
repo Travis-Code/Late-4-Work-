@@ -1,6 +1,11 @@
+//created by TRAVIS. H (BOOM)
+
 var game;
-var curse = ["HO, BRAH!", "Watch it you Suka!", "Whoops, MY BAD!", "AHHHH!","eh, Not My fault...","Chee Hee!","MY RIMS!"];
-var bgColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a,
+var barrierVehicles = ["barrier","barrier2","barrier3","barrier4","barrier5"];
+var trees = ["trees2"];
+var curse = ["HOPE YOU GOT\nINSURANCE","OUCH!", "Doh!", "Whoops,\nMY BAD!", "AHHHH!","Not My fault...","Chee Hee!","MY RIMS!","Outta My Way,\nDonkey!"];
+var endCurse = ["why u 2 bad"];
+var bgColors = [ 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a,
 0x588c73, 0x8c4646, 0x2a5b84, 0x73503c];
 var titleColors = [0xF16745, 0xFFC65D, 0x7BC8A4, 0x4CC3D9, 0x93648D, 0x7c786a];
 var tunnelWidth = 256;
@@ -13,17 +18,45 @@ var shipVerticalSpeed = 15000000;
 var swipeDistance = 10;
 //var barrierSpeed = Math.random()*1000+30;
 var barrierSpeed = 680;
-var barrierGap = 200;
+var barrierGap = 192;
 var shipHealth = 1;
-var barrierIncreaseSpeed = 1.03;
-var tunnelBGSpeed = 900;
-
-
+var barrierIncreaseSpeed = 3.03;
+var tunnelBGSpeed = 1400;
+//var treeSpeed = 400;
+//var treeGap = 10;
 //our custom barrier class.
 //any custom class needs to be created outside of any object, method or function
 //and at the same level where the game variable is declared. 
 //this makes the class available anywhere in the game.
 //Barrier Class 
+
+// TREE CLASS. IMPLEMENTATION SUCKS!
+/*Tree = function (game, speed, tintColor){
+	//var treePositions = [(game.width - tunnelWidth)+50, (game.width - tunnelWidth)+270];
+	var treePositions = [(game.width)+5];
+	//var treePosition = game.rnd.between(0,1);
+	Phaser.Sprite.call(this, game, treePositions, 0, trees);
+	//this.anchor.set(treePosition, 0.5);
+	this.tint = bgColors[game.rnd.between(0,bgColors.length-1)];
+	game.physics.enable(this, Phaser.Physics.ARCADE);
+	//this.body.immovable = true;
+	this.body.velocity.y = speed;
+	this.placeTree = true;
+
+Tree.prototype.update = function(){
+		if(this.placeTree){
+			this.placeTree = false;
+			playGame.prototype.addTree(this.parent, this.tint);
+		}
+		if(this.y > game.height+100){
+			this.destroy();
+		} 
+	}
+};
+
+Tree.prototype = Object.create(Phaser.Sprite.prototype);
+Tree.prototype.constructor = Tree;*/
+
 Barrier = function(game, speed, tintColor){
 	//positions is an Array that stores the barriers positions.
 	var positions = [(game.width - tunnelWidth) /2+30, (game.width + tunnelWidth) / 2-30];
@@ -33,16 +66,16 @@ Barrier = function(game, speed, tintColor){
 	//the call() method is extending the Phaser.Sprite method to the Barrier Class.  
 	//and lets us invoke sprite placement using this class!
 	//this refers to the Barrier itself, then passes in, game, x and y positions and the key "barrier".
-	Phaser.Sprite.call(this, game, positions[position], -190, "barrier");
+	Phaser.Sprite.call(this, game, positions[position], -190, barrierVehicles[game.rnd.between(0,barrierVehicles.length-1)]);
 	//Phaser.Sprite.call(this, game, 100, 100, "ship");
 	//cropRect holds a value of a new Rectangle object that we will use to crop the barrier for scaling purposes.
 	//new Rectangle(x,y,width,height) 
-	var cropRect = new Phaser.Rectangle(0,0, tunnelWidth / 2, 184);
+	var cropRect = new Phaser.Rectangle(0,0, tunnelWidth / 2, 170);
 	//this targets the barrier sprite and applies the Rectangle crop over it.
 	this.crop(cropRect);
 	game.physics.enable(this, Phaser.Physics.ARCADE);
 	this.anchor.set(position, 0.5);
-	this.tint = bgColors[game.rnd.between(0,bgColors.length-1)];
+	//this.tint = bgColors[game.rnd.between(0,bgColors.length-1)];
 	this.body.velocity.y = speed;
 	this.body.immovable = false;
 	//update method that will destroy the barrier once it goes off screen. 
@@ -57,8 +90,6 @@ Barrier = function(game, speed, tintColor){
 		if(this.y > game.height){
 			this.destroy();
 		} 
-	
-
 	}
 };
 
@@ -77,6 +108,7 @@ window.onload = function() {
 	game.state.add("TitleScreen", titleScreen);
 	game.state.add("PlayGame", playGame);
 	game.state.add("GameOverScreen", gameOverScreen);
+	game.state.add("Win", winStateScreen);
 	game.state.start("Boot");
 }
 
@@ -103,21 +135,32 @@ preload.prototype = {
 		//loading bar which grows as assets are being loaded.
 		game.load.setPreloadSprite(loadingBar); 
 		game.load.image("title","assets/sprites/titleLate4Work.png");
+		game.load.image("titleRage","assets/sprites/honoluluRage.png");
 		game.load.image("ragetitle","assets/sprites/roadRageTitle.png");
+		game.load.image("closedToday","assets/sprites/closedToday.png");
+		game.load.image("grassB","assets/sprites/grassB.png");
+		game.load.image("railB","assets/sprites/railB.png");
 		game.load.image("playbutton", "assets/sprites/playbutton.png");
 		game.load.image("backsplash", "assets/sprites/backsplash.png");
 		game.load.image("tunnelbg", "assets/sprites/roadSpriteSide.png");
 		game.load.image("wall","assets/sprites/grassTile.png");
-		game.load.image("ship", "assets/sprites/scionTopView.png");
+		game.load.image("pileUp","assets/sprites/pileUp.png");
+		game.load.image("ship", "assets/sprites/mainCar.png");
 		game.load.image("smoke", "assets/sprites/smoke2.png");
-		game.load.image("barrier", "assets/sprites/shitVic.png");
-		game.load.audio("bgmusic", ["assets/sounds/bgmusic.mp3","assets/sounds/bgmusic.ogg"]);
+		game.load.image("Sand", "assets/sprites/Sand.png");
+		game.load.image("barrier", "assets/sprites/greyCar.png");
+		game.load.image("barrier2", "assets/sprites/police.png");
+		game.load.image("barrier3", "assets/sprites/fancyCar.png");
+		game.load.image("barrier4", "assets/sprites/coolCar.png");
+		game.load.image("barrier5", "assets/sprites/orangeCar.png");
+		game.load.audio("bgmusic", ["assets/sounds/oldSchoolBG.mp3","assets/sounds/oldSchoolBG.ogg"]);
 		game.load.audio("explosion", ["assets/sounds/explosion.mp3","assets/sounds/explosion.ogg"]);
 		game.load.audio("carStart", ["assets/sounds/carStart.mp3","assets/sounds/carStart.ogg"]);
 		game.load.audio("carStart", ["assets/sounds/carStart.mp3","assets/sounds/carStart.ogg"]);
 		game.load.audio("carCrash", ["assets/sounds/Crash.mp3","assets/sounds/Crash.ogg"]);
 		game.load.audio("honk", ["assets/sounds/honk.mp3","assets/sounds/honk.ogg"]);
 		game.load.audio("screech", ["assets/sounds/screech.mp3","assets/sounds/screech.ogg"]);
+		game.load.audio("AstonButton", ["assets/sounds/Aston.mp3","assets/sounds/Aston.ogg"]);
 	},
 	create: function(){
 
@@ -132,27 +175,33 @@ titleScreen.prototype = {
 		var titleBG = game.add.tileSprite(0, 0, game.width, game.height, "backsplash");
 		//tint property tints an image.
 		titleBG.tint = bgColors[game.rnd.between(0,bgColors.length-1)];
-
+		var titlePic = game.add.image(game.width.centerX, game.height-600, "titleRage");
 		//set random background color.
 		//game.stage.backgroundColor = bgColors[game.rnd.between(0,bgColors.length-1)];
-		var title = game.add.image(game.width/2, 310, "title");
+		var title = game.add.image(game.width/2, 200, "title");
 		title.tint = titleColors[game.rnd.between(0,titleColors.length-1)];
 		title.anchor.set(0.5);
 		var titleTween = game.add.tween(title).to({
 			width:420,
 			height:420
 		}, 1500, "Linear", true, 0, -1);
+			var nameStyle = {font: "20px Helvetica", fill: "#ffffff", align: "center"}
+			var nametext = game.add.text(game.width/2+200, game.height-100, "PROGRAMMING \n& GRAPHICS \nby Travis.Jorel.H.\n(BOOM)", nameStyle);
+			nametext.anchor.set(0.5);
+			nametext.stroke = '#000000';
+			nametext.strokeThickness = 10;
+			//nametext.angle=-20;
 		//yoyo method gives yoyo effect plays forward then reverses if set to true.
 		//if yoyo method is set to false it will repeat without reversing.
 		titleTween.yoyo(true);
 		this.startCar = game.add.audio("carStart");
 		this.startCar.play();
-
 		// button method uses callback usually in context with this to specified method.
 		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame, this);
 		playButton.anchor.set(0.5);
 		//tween(target).to(properties, ease, autoStart, delay, repeat)
 		var playButtonTween = game.add.tween(playButton).to({
+
 			width:220,
 			height:220
 		}, 1500, "Linear", true, 0, -1);
@@ -161,11 +210,12 @@ titleScreen.prototype = {
 		playButtonTween.yoyo(true);
 	},
 	startGame: function(){
+				var doorCloseSound = game.add.audio("AstonButton");
+				doorCloseSound.play();
 				game.time.events.add(Phaser.Timer.SECOND * 0.4, function(){
 					console.log("it werks");
 					this.fade("PlayGame");
 				}, this);
-				console.log("switching to play game state");
 				//this.fade("PlayGame");
 		//game.state.start("PlayGame");
 	},
@@ -208,8 +258,9 @@ playGame.prototype = {
 		tintColor = bgColors[game.rnd.between(0,bgColors.length-1)];
 		//add tunnelbg to the game. make it cover the entire canvas.
 		//add.TileSprite(x,y,width,height,key)
+		
 		var tunnelBG = game.add.tileSprite(0, 0, game.width, game.height, "tunnelbg");
-			tunnelBG.autoScroll(0, tunnelBGSpeed+= 100);
+			tunnelBG.autoScroll(0, tunnelBGSpeed+= 200);
 		//tunnelBG.anchor.set(0.0);
 		//add and position left wall to the game.  
 		//add.TileSprite(x,y,width,height,key)
@@ -222,6 +273,45 @@ playGame.prototype = {
 			rightWallBG.autoScroll(0, 800);
 		//flip rightWalls x axis horizontally using -1.
 			rightWallBG.tileScale.x = -1;
+		var sandLeftWallBG = game.add.tileSprite( -tunnelWidth / 2, 0, game.width / 2, game.height, "Sand");
+			//sandLeftWallBG.tint = tintColor;
+			sandLeftWallBG.autoScroll(0, 800);
+		//add and position right wall to the game.
+		var sandRightWallBG = game.add.tileSprite((game.width + tunnelWidth)/2,0,game.width/2,game.height,"Sand");
+			//sandRightWallBG.tint = tintColor;
+			sandRightWallBG.autoScroll(0, 800);
+		//flip rightWalls x axis horizontally using -1.
+			sandRightWallBG.tileScale.x = -1;
+			sandLeftWallBG.alpha = 0.2;
+			sandRightWallBG.alpha = 0.2;
+
+		var grassLeftWallBG = game.add.tileSprite(-tunnelWidth/2, 0, 160, game.height, "grassB");
+			grassLeftWallBG.tint = tintColor;
+			grassLeftWallBG.autoScroll(0, 500);
+		//add and position right wall to the game.
+		var grassRightWallBG = game.add.tileSprite((game.width -60), 0, 60, game.height,"grassB");
+			grassRightWallBG.tint = tintColor;
+			grassRightWallBG.autoScroll(0, 500);
+		//flip rightWalls x axis horizontally using -1.
+			grassRightWallBG.tileScale.x = -1;
+			grassRightWallBG.alpha = 1;
+			grassLeftWallBG.alpha = 1;
+
+
+
+
+		var railLeftWallBG = game.add.tileSprite(tunnelWidth-85, 0, 30, game.height, "railB");
+			//sandLeftWallBG.tint = tintColor;
+			railLeftWallBG.autoScroll(0, 500);
+		//add and position right wall to the game.
+		var railRightWallBG = game.add.tileSprite((game.width -200), 0, 30, game.height,"railB");
+			//sandRightWallBG.tint = tintColor;
+			railRightWallBG.autoScroll(0, 500);
+		//flip rightWalls x axis horizontally using -1.
+			railRightWallBG.tileScale.x = -1;
+			
+
+
 		//make array of possible ship positions in relation to left and right walls.
 		this.shipPositions = [(game.width-tunnelWidth) / 2 + 52,(game.width+tunnelWidth) / 2 - 52]; 
 		//add the ship to the game and make its position left of the wall.
@@ -245,7 +335,7 @@ playGame.prototype = {
 			this.ship.canSwipe = true;
 		},this);
 		//add smoke emitter add.emitter(x, y, max) x/y are for placement of emitter and the max amount of particles value.
-		this.smokeEmitter = game.add.emitter(this.ship.x, this.ship.y + 10, 20);
+		this.smokeEmitter = game.add.emitter(this.ship.x+20, this.ship.y + 30, 20);
 		//set the image for the particle effect. 
 		this.smokeEmitter.makeParticles("smoke");
 		//each particle should have a horizontal and vertical speed.
@@ -267,7 +357,10 @@ playGame.prototype = {
 		this.verticalTween = game.add.tween(this.ship).to({
 			y:-200
 		}, shipVerticalSpeed, Phaser.Easing.Linear.None, true);
-
+		/*this.treeGroup = game.add.group();
+		var tree = new Tree(game, barrierSpeed, tintColor, this.ship);
+		game.add.existing(tree);
+		this.treeGroup.add(tree);*/
 		//barrierGroup is a container for all barriers.
 		this.barrierGroup = game.add.group();
 		//Barrier (line:16) is a new custom class that we made and we can pass thru our own arguments.
@@ -276,11 +369,15 @@ playGame.prototype = {
 		game.add.existing(barrier);
 		//tell phaser we want the new barrier object to be part of the barrierGroup.
 		this.barrierGroup.add(barrier);
-		//BUG wtf is going on here it breaks code when uncommented.
+		//BUG wth is going on here it breaks code when uncommented.
 		//it looks like this is adding an extra barrier that is unnecessary since
 		//the Barrier.prototype.update method is already adding
 		//this.addBarrier(this.barrierGroup, tintColor);
-		
+		this.counter = 25;
+		this.text = 0;
+		this.text = game.add.text(game.width/2, game.height-700, 'READY GO!', { font: "34px helvetica", fill: "#FFDC00", align: "center" });
+	    this.text.anchor.setTo(0.5);
+	    game.time.events.loop(Phaser.Timer.SECOND, this.updateCounter, this);
 		//Earthquake effect
 		//we needto add margin tot he world, so the camera can move
 		var margin = 50;
@@ -293,6 +390,18 @@ playGame.prototype = {
 		game.world.setBounds(x,y,w,h);
 		//we make sure camera is at position(0,0)
 		game.world.camera.position.set(0);
+		this.countDownTimer = game.time.events.loop(Phaser.Timer.SECOND * 5, this.winCounter, this);
+	},
+
+	winCounter:function(){
+		this.fade("Win");
+		this.bgMusic.stop();
+
+	},
+
+	updateCounter: function(){
+	    this.counter--;
+	    this.text.setText('Get to Work in \n' + this.counter + ' seconds!');
 	},
 
 	//this method deals with movement of the ship.
@@ -308,9 +417,10 @@ playGame.prototype = {
 			if(this.ship.side ==1){
 				this.ship.angle = 30;
 			}
-			else{			
-				this.ship.angle = -30;
-				}
+			else
+			{			
+			this.ship.angle = -30;
+			}
 			//this.ship.angle = 0;
 			//make tween on ship that moves it from the current side to the opposite side.
 			var horizontalTween = game.add.tween(this.ship).to({
@@ -329,7 +439,7 @@ playGame.prototype = {
 			}, this);
 			//add a shadow fade effect by using a copy of the ship image and tween
 			//then destory the ship copy after the tween completes with onComplete Method.
-			var ghostShip = game.add.sprite(this.ship.x, this.ship.y, "ship");
+		/*	var ghostShip = game.add.sprite(this.ship.x, this.ship.y, "ship");
 			ghostShip.alpha = 0.5;
 			ghostShip.anchor.set(0.5);
 			var ghostTween = game.add.tween(ghostShip).to({
@@ -337,7 +447,7 @@ playGame.prototype = {
 			}, 350, Phaser.Easing.Linear.None, true);
 			ghostTween.onComplete.add(function(){
 				ghostShip.destroy();
-			});
+			});*/
 		}
 	},
 
@@ -351,10 +461,11 @@ playGame.prototype = {
 		if(this.ship.canSwipe){
 			if(Phaser.Point.distance(game.input.activePointer.positionDown,
 				game.input.activePointer.position) > swipeDistance){
+				//game.input.activePointer.position) > swipeDistance){
 			//this.restartShip();
+				barrierSpeed += 2000; 
 			}
 		}
-		
 		//update method that checks to see if this.ship.destroyed = false.
 		//if so it checks to see if this.ship and this.barrierGroup are colliding.
 		//I implemented a shipHealth property that gives x amount of health/life to the ship.
@@ -368,17 +479,17 @@ playGame.prototype = {
 		//which will add an explosion emitter to the ship.
 		//after the explosion the ship will call game.state.start("GameOverScreen");
 		// and will switch to the game over state.
-
-
 		//fix this!
 		//game.physics.arcade.overlap(this.ship, this.barrierGroup, killBarrier, null, this);
-
-
-
-
+	
 		if(!this.ship.destroyed){
-			game.physics.arcade.collide(this.ship, this.barrierGroup, function(s,b)
+
+			game.physics.arcade.collide(this.ship, this.barrierGroup, null, function(s,b)
 			{
+						
+						game.time.events.remove(this.countDownTimer);
+
+
 				var destroyB = game.add.tween(b).to({
 							x: b.x + game.rnd.between(-100, 100),
 							y: b.y + game.rnd.between(-500, 800),
@@ -396,16 +507,15 @@ playGame.prototype = {
 							b.destroy();
 						}, this);
 
-				console.log("you got hit " + shipHealth );
-				shipHealth += 1;
 				var explosionSound = game.add.audio("explosion");
 				explosionSound.play();
 				this.addQuake();
 				var curser = curse[game.rnd.between(0,curse.length-1)];
-				var style = {font: "65px Impact", fill: "#ffffff", align: "center"}
-				var text = game.add.text(game.width/2, game.world.centerY+100, curser, style);
-				text.anchor.set(0.5);
-				text.destroy;
+				var style = {font: "75px Impact", fill: "#ffffff", align: "center"}
+				var curseText = game.add.text(game.width/2, game.height/2, curser, style);
+				curseText.anchor.set(0.5);
+				curseText.stroke = '#000000';
+				curseText.strokeThickness = 8;
 
 				/*var bText = game.add.text(b.x, b.y, curser, style);
 				game.time.events.add(Phaser.Timer.SECOND * 1, function(){
@@ -413,24 +523,8 @@ playGame.prototype = {
 				}, this);
 				*/
 
-
-
-				if(barrierSpeed == 800){
-					game.time.events.add(Phaser.Timer.SECOND * 0.3, function(){
-						text.destroy();
-					}, this);
-				}
-				else{
-					game.time.events.add(Phaser.Timer.SECOND * 0.6, function(){
-						text.destroy();
-					}, this);
-
-				}
-
 				var carHonk = game.add.audio("honk");
 				carHonk.play();
-
-			if(shipHealth >= 4){
 				this.ship.destroyed = true;
 				this.smokeEmitter.destroy();
 				var destroyTween = game.add.tween(this.ship).to({
@@ -450,18 +544,13 @@ playGame.prototype = {
 					var carCrash = game.add.audio("carCrash");
 					carCrash.play();
 					this.ship.destroy();
-					//this.ship.y = 100;
 					game.time.events.add(Phaser.Timer.SECOND * 2, function(){
 					this.ship.destroy();
-
-					//game.state.start("GameOverScreen");
 					this.fade("GameOverScreen");
-					this.ship.destroy();
 					}, this);
 				}, this);
-			}
-		}, null, this)
-
+			
+		}, this)
 		}
 
 	},
@@ -472,7 +561,7 @@ playGame.prototype = {
 	}*/
 
 	//fade state method.
-		fade: function (nextState){
+	fade: function (nextState){
 		var spr_bg = this.game.add.graphics(0, 0);        
 		spr_bg.beginFill(this.fadeColor, 1);        
 		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
@@ -511,8 +600,8 @@ playGame.prototype = {
 			for(var i = 0; i < this.barrierGroup.length; i++){
 				this.barrierGroup.getChildAt(i).body.velocity.y = barrierSpeed;
 			}
-			if (barrierSpeed >= 980){
-				barrierSpeed = 890;
+			if (barrierSpeed >= 3000){
+				barrierSpeed = 1090;
 			}
 		}
 
@@ -535,6 +624,12 @@ playGame.prototype = {
 		group.add(barrier);
 	},
 
+/*	addTree: function(group, tintColor){
+		var tree = new Tree(game, treeSpeed, tintColor);
+		game.add.existing(tree);
+		group.add(tree);
+	},
+*/
 
 	addQuake: function(){
 		// define the camera offset for the quake
@@ -561,7 +656,6 @@ playGame.prototype = {
 		// let the earthquake begins
 		quake.start();
 },
-
 addCarShake: function(){
 		// define the camera offset for the quake
 		var rumbleOffset = 10;
@@ -588,10 +682,75 @@ addCarShake: function(){
 		quake.start();
 	}
 }
+var winStateScreen = function(game){};
+winStateScreen.prototype ={
+	create:function(){
+		console.log("YOU WIN!");
+
+		var titleBG = game.add.tileSprite(0, 0, game.width, game.height, "backsplash");
+		//tint property tints an image.
+		titleBG.tint = bgColors[game.rnd.between(0,bgColors.length-1)];
+		var closedSign = game.add.image(game.width/2, game.height/2+25, "closedToday");
+		var signStyle = {font: "50px Impact", fill: "#ffffff", align: "center", fontWeight: "bold"}
+		var closedText = game.add.text(game.width/2, game.height/2-300, "CONGRATULATIONS!\nYOU MADE IT TO WORK \n BUT IT WAS YOUR\nDAY OFF...", signStyle);
+		closedSign.anchor.set(0.5);
+		closedText.anchor.set(0.5);
+		closedText.stroke = '#000000';
+		closedText.strokeThickness = 6;
+		var playButton = game.add.button(game.width/2, game.height-150,"playbutton", this.startGame, this);
+		playButton.anchor.set(0.5);
+		//tween(target).to(properties, ease, autoStart, delay, repeat)
+		var playButtonTween = game.add.tween(playButton).to({
+			width:220,
+			height:220
+		}, 1500, "Linear", true, 0, -1);
+		//yoyo method gives yoyo effect plays forward then reverses if set to true.
+		//if yoyo method is set to false it will repeat without reversing.
+		playButtonTween.yoyo(true);
+		game.world.camera.position.set(0);
+},		
+
+	startGame: function(){
+		var doorCloseSound = game.add.audio("AstonButton");
+		doorCloseSound.play();
+		//reset barrierSpeed back to 280 for next game.
+		//barrierSpeed = 480;
+		this.fade("TitleScreen");
+		//game.state.start("PlayGame");
+	},
+
+	fade: function (nextState){
+		var spr_bg = this.game.add.graphics(0, 0);        
+		spr_bg.beginFill(this.fadeColor, 1);        
+		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
+		spr_bg.alpha = 0;        
+		spr_bg.endFill();        
+		this.nextState = nextState;        
+		s = this.game.add.tween(spr_bg)        
+		s.to({ alpha: 1 }, 500, null)        
+		s.onComplete.add(this.changeState, this)        
+		s.start();    
+	},   
+	changeState: function (){        
+		this.game.state.start(this.nextState);        
+		this.fadeOut();    
+	},    
+	fadeOut: function (){        
+		var spr_bg = this.game.add.graphics(0, 0);        
+		spr_bg.beginFill(this.fadeColor, 1);        
+		spr_bg.drawRect(0, 0, this.game.width, this.game.height);        
+		spr_bg.alpha = 1;        
+		spr_bg.endFill();        
+		s = this.game.add.tween(spr_bg)        
+		s.to({ alpha: 0 }, 600, null)        
+		s.start();    
+	},
+}
 
 var gameOverScreen = function(game){};
 gameOverScreen.prototype = {
 	create: function(){
+		barrierSpeed = 680;
 		shipHealth = 1;
 		var gameOverBG = bgColors[game.rnd.between(0,bgColors.length-1)];
 		//var style = {font: "65px Helvetica", fill: "#ff0044", align: "center"}
@@ -600,9 +759,18 @@ gameOverScreen.prototype = {
 		//text.anchor.set(0.5);
 		//set random background color.
 		//game.stage.backgroundColor = bgColors[game.rnd.between(0,bgColors.length-1)];
-		var title = game.add.image(game.width/2, 310, "ragetitle");
+		var pileUp = game.add.image(game.width.centerX, 400, "pileUp");
+		var title = game.add.image(game.width/2, game.height-780, "ragetitle");
+		var endStyle = {font: "75px Impact", fill: "#ffffff", align: "center"}
+			var endtext = game.add.text(game.width/2, game.height-390, "WRECKED!", endStyle);
+			endtext.stroke = '#000000';
+			endtext.strokeThickness = 8;
+			endtext.anchor.set(0.5);	
+	
+
 		title.tint = titleColors[game.rnd.between(0,titleColors.length-1)];
 		title.anchor.set(0.5);
+
 
 		var titleTween = game.add.tween(title).to({
 			width:420,
@@ -622,19 +790,17 @@ gameOverScreen.prototype = {
 		//yoyo method gives yoyo effect plays forward then reverses if set to true.
 		//if yoyo method is set to false it will repeat without reversing.
 		playButtonTween.yoyo(true);
+		game.world.camera.position.set(0);
 
-},
-
-		
+},		
 	startGame: function(){
 		var carHonk = game.add.audio("honk");
 		carHonk.play();
 		//reset barrierSpeed back to 280 for next game.
-		barrierSpeed = 480;
+		//barrierSpeed = 480;
 		this.fade("PlayGame");
 		//game.state.start("PlayGame");
 	},
-
 		//fade to a different state method.
 	fade: function (nextState){
 		var spr_bg = this.game.add.graphics(0, 0);        
@@ -648,12 +814,10 @@ gameOverScreen.prototype = {
 		s.onComplete.add(this.changeState, this)        
 		s.start();    
 	},   
-
 	changeState: function (){        
 		this.game.state.start(this.nextState);        
 		this.fadeOut();    
 	},    
-
 	fadeOut: function (){        
 		var spr_bg = this.game.add.graphics(0, 0);        
 		spr_bg.beginFill(this.fadeColor, 1);        
@@ -664,6 +828,4 @@ gameOverScreen.prototype = {
 		s.to({ alpha: 0 }, 600, null)        
 		s.start();    
 	},
-
 }
-
